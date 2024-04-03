@@ -1,6 +1,7 @@
 name: "Update Consul versions"
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '22 2 * * *' # Run once per day, at a randomly chosen time.
 
@@ -30,14 +31,14 @@ jobs:
           installation_id=$(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: Bearer $jwt" https://api.github.com/app/installations | jq '.[] | select(.account.login == "${{ github.repository_owner }}") | .id')
           token=$(curl -s -X POST -H "Accept: application/vnd.github.v3+json" -H "Authorization: Bearer $jwt" https://api.github.com/app/installations/$installation_id/access_tokens | jq -r '.token')
           echo "::add-mask::$token"
-          echo "::set-output name=token::$token"
+          echo "token=$token" >> $GITHUB_OUTPUT
 
       - name: Install PowerShellForGitHub
         shell: pwsh
         run: Install-Module -Force PowerShellForGitHub
 
       - name: Update consul versions
-        uses: technote-space/create-pr-action@v2
+        uses: gr-oss-devops/create-pr-action@main
         with:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           EXECUTE_COMMANDS: pwsh .github/workflows/scripts/update-consul-versions.ps1
