@@ -1,7 +1,6 @@
 name: "Update Consul versions"
 
 on:
-  push:
   schedule:
     - cron: '22 2 * * *' # Run once per day, at a randomly chosen time.
 
@@ -9,7 +8,7 @@ jobs:
   update-consul-versions:
     # Only run on main repository
     # Scheduled workflows do not have information about fork status, hence the hardcoded check
-    # if: github.repository == 'G-Research/consuldotnet'
+    if: github.repository == 'G-Research/consuldotnet'
     environment: update-consul-versions
     runs-on: ubuntu-latest
     steps:
@@ -23,9 +22,9 @@ jobs:
 
       - name: Create access token
         id: token
-        # env:
-        #   APP_ID: ${{ secrets.APP_ID }}
-        #   APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+        env:
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
         run: |
           jwt=$(step crypto jwt sign --key /dev/fd/3 --issuer $APP_ID --expiration $(date -d +5min +%s) --subtle 3<<< $APP_PRIVATE_KEY)
           installation_id=$(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: Bearer $jwt" https://api.github.com/app/installations | jq '.[] | select(.account.login == "${{ github.repository_owner }}") | .id')
@@ -38,7 +37,7 @@ jobs:
         run: Install-Module -Force PowerShellForGitHub
 
       - name: Update consul versions
-        uses: gr-oss-devops/create-pr-action@main
+        uses: technote-space/create-pr-action@v2
         with:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
           EXECUTE_COMMANDS: pwsh .github/workflows/scripts/update-consul-versions.ps1
